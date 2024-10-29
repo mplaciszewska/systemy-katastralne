@@ -22,7 +22,6 @@ body {
     justify-content: center;
     padding: 0px 20px;
     text-align: center;
-    font-size: 14px;
     margin-top: 0px;
 }
 
@@ -44,10 +43,6 @@ h4 {
     background-color: rgb(31, 31, 31);
     padding: 15px;
     color: rgb(189, 189, 189);
-}
-
-.sidebar-content {
-    font-size: 14px;
 }
 
 .sidebar-number{
@@ -96,8 +91,6 @@ h4 {
     float:right;
 }
 
-
-
 .input {
     display: block;
     margin: 20px auto ;
@@ -131,5 +124,3 @@ input[type=file]::file-selector-button:hover {
     padding:  3px 5px;
     font-size: 14px;
 }
-
-
