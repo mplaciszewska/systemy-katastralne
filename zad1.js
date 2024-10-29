@@ -29,10 +29,6 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
             const text = decoder.decode(bytes);
             const lines = text.split('\n');
             
-            console.log("Odczytany tekst:", text);
-            console.log("Odczytane linie:", lines);
-            
-            // let headers = [];
             let i = 0;
 
             while (i < lines.length) {
