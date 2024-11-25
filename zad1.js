@@ -22,13 +22,12 @@ document.getElementById('fileInput').addEventListener('change', function(event) 
 
     if (file) {
         const reader = new FileReader();
-
         reader.onload = function(e) {
             const bytes = new Uint8Array(e.target.result);
             const decoder = new TextDecoder('windows-1250');
             const text = decoder.decode(bytes);
             const lines = text.split('\n');
-            
+        
             let i = 0;
 
             while (i < lines.length) {
@@ -127,9 +126,9 @@ const errorColors = {
     "Błąd składni, niepoprawna ilość '/'": "#CA6702",
     "Błąd składni - nieoczekiwany znak": "#0A9396",
     "Powtórzony numer konturu": "#aad576",
-    "Błąd klasyfikacji - OFU nieklasyfikowane": "#E9D8A6",
+    "Błąd klasyfikacji - OFU nieklasyfikowane posiada klasę": "#E9D8A6",
     "Błąd klasyfikacji - niepoprawne OZK": "#b56576",
-    "Błąd klasyfikacji - niepoprawne OFU": "#94D2BD",
+    "Niepoprawne OFU": "#94D2BD",
     "Błąd klasyfikacji - brak OZK": "#f391a0"
     
 };
@@ -180,7 +179,7 @@ function checkOfuError(header, rightSide) {
     if (wrongHeaders[header] || goodHeaders.includes(header)) return;
     if (OFU_unclassified.some(prefix => rightSide.startsWith(prefix)) && !OFU.some(prefix => rightSide.startsWith(prefix))) {
         if (!OFU_unclassified.includes(rightSide)) {
-            wrongHeaders[header] = "Błąd klasyfikacji - OFU nieklasyfikowane";
+            wrongHeaders[header] = "Błąd klasyfikacji - OFU nieklasyfikowane posiada klasę";
         } else {
             goodHeaders.push(header);
         }
@@ -198,10 +197,10 @@ function checkClass(header, rightSide) {
                 if (suffixList.some(suffix => part2.endsWith(suffix))) {
                     goodHeaders.push(header);
                 } else {
-                    wrongHeaders[header] = "Błąd klasyfikacji - niepoprawne OFU";
+                    wrongHeaders[header] = "Niepoprawne OFU" ;
                 }
             } else {
-                wrongHeaders[header] = "Błąd klasyfikacji - niepoprawne OFU";
+                wrongHeaders[header] = "Niepoprawne OFU";
             }
         } else if (OFU_unclassified.includes(rightSide)) {
             goodHeaders.push(header);
@@ -224,23 +223,55 @@ function checkClass(header, rightSide) {
             wrongHeaders[header] = "Błąd klasyfikacji - niepoprawne OZK";
         }
     } else {
-        wrongHeaders[header] = "Błąd klasyfikacji - niepoprawne OFU";
+        wrongHeaders[header] = "Niepoprawne OFU";
     }
 }
 
 function exportErrorsToFile() {
     let fileContent = 'Błędne nagłówki:\n\n';
     for (const [header, error] of Object.entries(wrongHeaders)) {
-        fileContent += `${header} - ${error}\n`;
-    }
-    const blob = new Blob([fileContent], { type: "text/plain" });
+        let correctionHint = ''; 
 
+        if (error === "Błąd składni, niepoprawna ilość '/'") {
+            correctionHint = ", nagłówek powinien zawierać dokładnie jeden znak '/'.";
+        } else if (error === "Błąd klasyfikacji - OFU nieklasyfikowane posiada klasę") {
+            const rightSide = header.split('/')[1];
+            correctionHint = `, dla OFU ="${rightSide.split('-')[0]}" nie powinno być przypisanej klasy.`;
+        } else if (error === "Błąd klasyfikacji - niepoprawne OZK") {
+            const rightSide = header.split('/')[1];
+            const ofuType = rightSide.split(new RegExp(OZK_r.concat(OZK_l_ps_ls_lz).join('|')))[0];
+        
+            if (OZU_1.includes(ofuType)) {
+                correctionHint = `, dla OFU = "${ofuType}", OZK powinno wynosić: ${OZK_l_ps_ls_lz.join(', ')}.`;
+            } else {
+                correctionHint = `, dla OFU = "${ofuType}", OZK powinno wynosić: ${OZK_r.join(', ')}.`;
+            }   
+        } else if (error === "Niepoprawne OFU") {
+            const rightSide = header.split('/')[1];
+            correctionHint = ` = ${rightSide.split('-')[0]}.`;
+        } else if (error === "Błąd klasyfikacji - brak OZK") {
+            const rightSide = header.split('/')[1];
+            const ofuType = rightSide.split(new RegExp(OZK_r.concat(OZK_l_ps_ls_lz).join('|')))[0];
+            if (OZU_1.includes(ofuType)) {
+                correctionHint = `, dla OFU = "${ofuType}", OZK powinno wynosić: ${OZK_l_ps_ls_lz.join(', ')}.`;
+            } else  {
+                correctionHint = `, dla OFU = "${ofuType}", OZK powinno wynosić: ${OZK_r.join(', ')}.`;
+            }
+            
+        }
+        fileContent += `${header} - ${error}`;
+        if (correctionHint) {
+            fileContent += `${correctionHint}`;
+        }
+        fileContent += '\n';
+    }
+
+    const blob = new Blob([fileContent], { type: "text/plain" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = "bledne_kontury.txt";
     link.click();
     URL.revokeObjectURL(link.href);
 }
-
 
 
